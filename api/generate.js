@@ -38,13 +38,13 @@ module.exports = async (req, res) => {
 
   const { prompt } = req.body || {};
   if (!prompt || typeof prompt !== "string") {
-    res.status(400).json({ error: "Prompt is required" });
+    res.status(400).json({ error: "Prompt is required and must be a string" });
     return;
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    res.status(500).json({ error: "Server misconfigured: missing GEMINI_API_KEY" });
+    res.status(500).json({ error: "Service temporarily unavailable" });
     return;
   }
 
