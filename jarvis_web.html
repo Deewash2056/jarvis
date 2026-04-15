@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS AI Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: #00ff00;
+            text-align: center;
+            padding: 20px;
+        }
+        #output {
+            margin: 20px;
+            font-size: 1.2em;
+        }
+        button {
+            background-color: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        button:hover {
+            background-color: #00cc00;
+        }
+        input {
+            padding: 10px;
+            width: 80%;
+            max-width: 400px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>JARVIS AI Assistant</h1>
+    <div id="output">Hello, I am JARVIS. How can I assist you today?</div>
+    <input type="text" id="textInput" placeholder="Type your command">
+    <button onclick="sendText()">Send</button>
+    <button onclick="startVoice()">Start Voice</button>
+    <button onclick="stopVoice()">Stop Voice</button>
+
+    <script>
+        const output = document.getElementById('output');
+        const textInput = document.getElementById('textInput');
+        let recognition;
+
+        // Check for Web Speech API support
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                textInput.value = transcript;
+                sendText();
+            };
+
+            recognition.onerror = function(event) {
+                if (event.error === 'network') {
+                    output.textContent = 'Voice recognition failed due to network issues. Please check your internet connection or use text input.';
+                } else {
+                    output.textContent = 'Voice recognition error: ' + event.error;
+                }
+            };
+        } else {
+            output.textContent = 'Web Speech API not supported in this browser.';
+        }
+
+        function startVoice() {
+            if (recognition) {
+                recognition.start();
+                output.textContent = 'Listening...';
+            }
+        }
+
+        function stopVoice() {
+            if (recognition) {
+                recognition.stop();
+                output.textContent = 'Voice stopped.';
+            }
+        }
+
+        function sendText() {
+            const query = textInput.value.trim();
+            if (!query) return;
+
+            if (query.toLowerCase().includes('exit') || query.toLowerCase().includes('quit')) {
+                output.textContent = 'Goodbye!';
+                speak('Goodbye!');
+                return;
+            }
+
+            output.textContent = 'Thinking...';
+            getAIResponse(query);
+            textInput.value = '';
+        }
+
+        function getAIResponse(prompt) {
+            const apiKey = '[REDACTED_API_KEY]'; // Replace with your key
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=${apiKey}`;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: `Respond as JARVIS, the AI assistant: ${prompt}` }]
+                    }]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+                    const responseText = data.candidates[0].content.parts[0].text;
+                    output.textContent = responseText;
+                    speak(responseText);
+                } else {
+                    output.textContent = 'Error: Unable to get response';
+                }
+            })
+            .catch(error => {
+                output.textContent = 'Error: ' + error.message;
+            });
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Initial greeting
+        speak('Hello, I am JARVIS. How can I assist you today?');
+    </script>
+</body>
+</html>
