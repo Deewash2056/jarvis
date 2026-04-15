@@ -1,6 +1,9 @@
 const GEMINI_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent";
 
+const extractResponseText = (data) =>
+  data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
   const host = req.headers["x-forwarded-host"] || req.headers.host;
@@ -92,7 +95,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const responseText = extractResponseText(data);
     if (!responseText) {
       res.status(502).json({ error: "No response from model" });
       return;
@@ -100,6 +103,7 @@ module.exports = async (req, res) => {
 
     res.status(200).json({ text: responseText });
   } catch (error) {
-    res.status(500).json({ error: error?.message || "Unexpected server error" });
+    console.error("Gemini proxy error", error);
+    res.status(500).json({ error: "Unexpected server error" });
   }
 };

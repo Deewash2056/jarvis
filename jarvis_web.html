@@ -112,7 +112,12 @@
                 body: JSON.stringify({ prompt })
             })
             .then(async response => {
-                const data = await response.json().catch(() => ({}));
+                let data;
+                try {
+                    data = await response.json();
+                } catch (error) {
+                    throw new Error('Invalid server response');
+                }
                 if (!response.ok) {
                     const message = data.error || 'Unable to get response';
                     throw new Error(message);
