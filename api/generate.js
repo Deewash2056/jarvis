@@ -2,7 +2,27 @@ const GEMINI_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent";
 
 module.exports = async (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin;
+  const host = req.headers["x-forwarded-host"] || req.headers.host;
+  const protocol = req.headers["x-forwarded-proto"] || "https";
+  const defaultOrigin = host ? `${protocol}://${host}` : null;
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",").map((item) => item.trim()).filter(Boolean)
+    : defaultOrigin
+      ? [defaultOrigin]
+      : [];
+
+  if (origin && allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
+    res.status(403).json({ error: "Origin not allowed" });
+    return;
+  }
+
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  } else if (allowedOrigins.length > 0) {
+    res.setHeader("Access-Control-Allow-Origin", allowedOrigins[0]);
+  }
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 

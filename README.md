@@ -14,4 +14,4 @@ After deploy, Vercel will provide a public HTTPS URL. Use that URL to access JAR
 ## Notes
 
 - Voice input/output requires HTTPS, which Vercel provides.
-- The API endpoint is `/api/generate` and includes CORS headers for safety if you host the UI elsewhere.
+- The API endpoint is `/api/generate`. To allow other origins, set `ALLOWED_ORIGINS` (comma-separated) on the host; otherwise it defaults to the deployed domain.
