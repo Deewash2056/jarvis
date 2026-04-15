@@ -6,11 +6,28 @@ module.exports = async (req, res) => {
   const host = req.headers["x-forwarded-host"] || req.headers.host;
   const protocol = req.headers["x-forwarded-proto"] || "https";
   const defaultOrigin = host ? `${protocol}://${host}` : null;
-  const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",").map((item) => item.trim()).filter(Boolean)
+  const configuredOrigins = process.env.ALLOWED_ORIGINS;
+  const allowedOrigins = configuredOrigins
+    ? configuredOrigins
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .filter((item) => {
+          try {
+            new URL(item);
+            return true;
+          } catch {
+            return false;
+          }
+        })
     : defaultOrigin
       ? [defaultOrigin]
       : [];
+
+  if (configuredOrigins && allowedOrigins.length === 0) {
+    res.status(500).json({ error: "Service temporarily unavailable" });
+    return;
+  }
 
   if (origin && allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
     res.status(403).json({ error: "Origin not allowed" });
@@ -61,7 +78,13 @@ module.exports = async (req, res) => {
       }),
     });
 
-    const data = await response.json().catch(() => ({}));
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      res.status(502).json({ error: "Invalid response from Gemini API" });
+      return;
+    }
 
     if (!response.ok) {
       const message = data?.error?.message || "Gemini API error";
