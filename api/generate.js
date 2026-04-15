@@ -28,7 +28,8 @@ module.exports = async (req, res) => {
       : [];
 
   if (configuredOrigins && allowedOrigins.length === 0) {
-    res.status(500).json({ error: "Service temporarily unavailable" });
+    console.error("Invalid ALLOWED_ORIGINS configuration");
+    res.status(500).json({ error: "Server configuration error" });
     return;
   }
 
@@ -103,7 +104,7 @@ module.exports = async (req, res) => {
 
     res.status(200).json({ text: responseText });
   } catch (error) {
-    console.error("Gemini proxy error", error);
+    console.error("Gemini proxy error", error?.message);
     res.status(500).json({ error: "Unexpected server error" });
   }
 };
